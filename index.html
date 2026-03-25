@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CPA Network — Join Request</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #F4F2EE;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    color: #1a1a1a;
+  }
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    max-width: 540px;
+    width: 100%;
+    border: 0.5px solid #e0ddd6;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; }
+  .brand-dot { width: 10px; height: 10px; background: #1D9E75; border-radius: 50%; }
+  .brand-name { font-family: 'DM Serif Display', serif; font-size: 15px; color: #444; letter-spacing: 0.02em; }
+  .progress-bar { height: 2px; background: #eee; border-radius: 2px; margin-bottom: 2rem; }
+  .progress-fill { height: 100%; background: #1D9E75; border-radius: 2px; transition: width 0.4s ease; }
+  .q-meta { font-size: 12px; color: #999; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .q-text { font-size: 20px; font-weight: 500; line-height: 1.35; margin-bottom: 1.5rem; color: #111; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.75rem; }
+  .chip {
+    padding: 9px 18px; border: 0.5px solid #ddd; border-radius: 24px;
+    font-size: 14px; cursor: pointer; color: #333; background: #fff;
+    transition: all 0.15s; font-family: 'DM Sans', sans-serif;
+  }
+  .chip:hover { border-color: #1D9E75; color: #0F6E56; background: #f5fdf9; }
+  .chip.selected { background: #E1F5EE; border-color: #1D9E75; color: #0F6E56; }
+  .textarea-wrap { margin-bottom: 1.75rem; }
+  textarea {
+    width: 100%; min-height: 100px; padding: 12px 14px;
+    border: 0.5px solid #ddd; border-radius: 10px;
+    font-size: 14px; font-family: 'DM Sans', sans-serif;
+    color: #111; background: #fff; resize: none; outline: none;
+    transition: border 0.15s; line-height: 1.65;
+  }
+  textarea:focus { border-color: #1D9E75; }
+  textarea::placeholder { color: #bbb; }
+  .hint { font-size: 12px; color: #bbb; margin-top: 6px; }
+  .nav { display: flex; justify-content: space-between; align-items: center; }
+  .nav button {
+    padding: 10px 24px; border-radius: 8px; font-size: 14px;
+    cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 500; transition: all 0.15s;
+  }
+  .btn-back { border: 0.5px solid #ddd; background: #fff; color: #555; }
+  .btn-back:hover { background: #f5f5f5; }
+  .btn-next { border: none; background: #1D9E75; color: #fff; }
+  .btn-next:hover { background: #0F6E56; }
+  .btn-next:disabled { background: #e8e8e8; color: #bbb; cursor: not-allowed; }
+  .step-count { font-size: 13px; color: #bbb; }
+  .step { display: none; }
+  .step.active { display: block; }
+  .thinking { display: none; text-align: center; padding: 3rem 0; }
+  .dots span {
+    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    background: #1D9E75; margin: 0 4px; animation: bounce 1.2s infinite;
+  }
+  .dots span:nth-child(2) { animation-delay: 0.2s; }
+  .dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,80%,100%{transform:scale(0.5);opacity:0.4} 40%{transform:scale(1);opacity:1} }
+  .thinking p { font-size: 14px; color: #999; margin-top: 14px; }
+  .result { display: none; text-align: center; padding: 2rem 0; }
+  .result-icon {
+    width: 60px; height: 60px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.25rem;
+  }
+  .result-icon.pass { background: #E1F5EE; }
+  .result-icon.fail { background: #FAECE7; }
+  .result h2 { font-size: 22px; font-weight: 500; margin-bottom: 10px; color: #111; }
+  .result p { font-size: 14px; color: #666; line-height: 1.65; max-width: 360px; margin: 0 auto 1.75rem; }
+  .wa-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 13px 30px; background: #25D366; color: #fff;
+    border-radius: 10px; text-decoration: none;
+    font-size: 15px; font-weight: 500; font-family: 'DM Sans', sans-serif;
+    transition: background 0.15s;
+  }
+  .wa-btn:hover { background: #1eb854; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="brand">
+    <div class="brand-dot"></div>
+    <div class="brand-name">CPA Network</div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
+
+  <div id="quiz">
+    <div class="step active" data-step="0">
+      <div class="q-meta">Question 1 of 5</div>
+      <div class="q-text">Which country are you primarily based in?</div>
+      <div class="chips" id="chips-0">
+        <div class="chip" data-val="United States">United States</div>
+        <div class="chip" data-val="Canada">Canada</div>
+        <div class="chip" data-val="United Kingdom">United Kingdom</div>
+        <div class="chip" data-val="India">India</div>
+        <div class="chip" data-val="UAE">UAE</div>
+        <div class="chip" data-val="Other">Other</div>
+      </div>
+    </div>
+
+    <div class="step" data-step="1">
+      <div class="q-meta">Question 2 of 5</div>
+      <div class="q-text">What is your professional designation?</div>
+      <div class="chips" id="chips-1">
+        <div class="chip" data-val="CPA (US)">CPA (US)</div>
+        <div class="chip" data-val="CA">CA</div>
+        <div class="chip" data-val="ACCA">ACCA</div>
+        <div class="chip" data-val="CMA">CMA</div>
+        <div class="chip" data-val="Other accounting qualification">Other</div>
+        <div class="chip" data-val="Currently pursuing qualification">Pursuing</div>
+      </div>
+    </div>
+
+    <div class="step" data-step="2">
+      <div class="q-meta">Question 3 of 5</div>
+      <div class="q-text">What best describes your current role?</div>
+      <div class="chips" id="chips-2">
+        <div class="chip" data-val="Big 4 / Large firm">Big 4 / Large firm</div>
+        <div class="chip" data-val="Mid-tier firm">Mid-tier firm</div>
+        <div class="chip" data-val="Solo practice / Freelance">Solo / Freelance</div>
+        <div class="chip" data-val="Industry / Corporate">Industry / Corporate</div>
+        <div class="chip" data-val="Government / Public sector">Government</div>
+        <div class="chip" data-val="Student / Intern">Student / Intern</div>
+      </div>
+    </div>
+
+    <div class="step" data-step="3">
+      <div class="q-meta">Question 4 of 5</div>
+      <div class="q-text">Which area of accounting do you primarily work in?</div>
+      <div class="chips" id="chips-3">
+        <div class="chip" data-val="Tax">Tax</div>
+        <div class="chip" data-val="Audit & Assurance">Audit</div>
+        <div class="chip" data-val="Advisory / Consulting">Advisory</div>
+        <div class="chip" data-val="Financial Reporting">Financial Reporting</div>
+        <div class="chip" data-val="Management Accounting">Management Accounting</div>
+        <div class="chip" data-val="Other">Other</div>
+      </div>
+    </div>
+
+    <div class="step" data-step="4">
+      <div class="q-meta">Question 5 of 5</div>
+      <div class="q-text">What are you hoping to get from this network, and what do you bring to it?</div>
+      <div class="textarea-wrap">
+        <textarea id="open-answer" placeholder="e.g. I'm a tax specialist with 8 years of experience. Looking to connect with professionals in similar fields..."></textarea>
+        <div class="hint">A brief answer (at least a few words) is required to proceed.</div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <button class="btn-back" id="back-btn" onclick="back()" style="visibility:hidden">Back</button>
+      <span class="step-count" id="step-count">1 / 5</span>
+      <button class="btn-next" id="next-btn" onclick="next()" disabled>Continue</button>
+    </div>
+  </div>
+
+  <div class="thinking" id="thinking">
+    <div class="dots"><span></span><span></span><span></span></div>
+    <p>Reviewing your application...</p>
+  </div>
+
+  <div class="result" id="result">
+    <div class="result-icon" id="result-icon"></div>
+    <h2 id="result-title"></h2>
+    <p id="result-msg"></p>
+    <a id="wa-link" class="wa-btn" href="#" style="display:none" target="_blank">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Join the WhatsApp group
+    </a>
+  </div>
+</div>
+
+<script>
+  let current = 0;
+  const total = 5;
+  const answers = {};
+
+  function updateProgress() {
+    document.getElementById('progress').style.width = ((current / total) * 100) + '%';
+    document.getElementById('step-count').textContent = (current + 1) + ' / ' + total;
+    document.getElementById('back-btn').style.visibility = current > 0 ? 'visible' : 'hidden';
+  }
+
+  function checkNext() {
+    const btn = document.getElementById('next-btn');
+    // Questions 1-4 require a chip selection; question 5 requires at least a few words
+    if (current < 4) {
+      btn.disabled = !answers[current];
+    } else {
+      btn.disabled = document.getElementById('open-answer').value.trim().split(/\s+/).filter(Boolean).length < 5;
+    }
+  }
+
+  document.querySelectorAll('.chips').forEach(container => {
+    container.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        container.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        answers[current] = chip.dataset.val;
+        checkNext();
+      });
+    });
+  });
+
+  document.getElementById('open-answer').addEventListener('input', checkNext);
+
+  function next() {
+    if (current < 4) {
+      document.querySelectorAll('.step')[current].classList.remove('active');
+      current++;
+      document.querySelectorAll('.step')[current].classList.add('active');
+      updateProgress();
+      checkNext();
+      if (current === 4) document.getElementById('next-btn').textContent = 'Submit';
+    } else {
+      answers[4] = document.getElementById('open-answer').value.trim();
+      submit();
+    }
+  }
+
+  function back() {
+    document.querySelectorAll('.step')[current].classList.remove('active');
+    current--;
+    document.querySelectorAll('.step')[current].classList.add('active');
+    updateProgress();
+    document.getElementById('next-btn').textContent = 'Continue';
+    checkNext();
+  }
+
+  function isVague(text) {
+    if (!text || text.trim().length === 0) return true;
+    const t = text.toLowerCase().trim();
+    const words = t.split(/\s+/).filter(Boolean);
+    if (words.length < 5) return true;
+
+    const junkPhrases = [
+      'just playing around','playing around','just playing','just fun','have some fun',
+      'having fun','just testing','just checking','just curious','just looking',
+      'no reason','for fun','bored','kill time','killing time','nothing serious',
+      'not sure','idk','no idea','whatever','n/a','test','hello','hi','just here','see what',
+      'just wanted to','just want to see','just exploring','just browsing','randomly joined',
+      'friend sent','someone sent','saw the link','found the link','clicked the link',
+      'don\'t know','dont know','no clue','not really','just joined','just here for',
+      'nothing much','not much','just hanging','hanging out','pass time','passing time',
+      'chilling','just chilling','timepass','time pass','just saw','just found',
+      'just messing','messing around','no particular reason','no specific reason',
+      'out of curiosity','just out of curiosity','saw this','came across','stumbled',
+      'not professional','not in accounting','not related','wrong group','random',
+      'lol','lmao','haha','hehe','joke','joking','kidding','just kidding','jk'
+    ];
+    if (junkPhrases.some(p => t.includes(p))) return true;
+
+    const professionalKeywords = [
+      // Core designations & roles
+      'accounting','finance','tax','audit','cpa','ca','acca','cma','cfa','cia','cisa','frm',
+      'chartered','accountant','controller','cfo','coo','ceo','analyst','consultant','partner',
+      'manager','director','associate','intern','article','articleship','big4','big 4',
+      'staff accountant','senior accountant','accounting manager','finance manager',
+      'finance director','vp finance','head of finance','chief accountant','group controller',
+      'financial controller','treasury manager','tax manager','tax director','audit manager',
+      'audit partner','engagement partner','signing partner','principal','supervising',
+      'bookkeeper','accounts payable','accounts receivable','ar','ap','payroll specialist',
+      'payroll manager','billing specialist','revenue accountant','cost accountant',
+      'management accountant','budget analyst','fp&a','financial planning','financial analysis',
+
+      // Firms & networks
+      'deloitte','pwc','kpmg','ey','ernst','grant thornton','bdo','rsm','mazars',
+      'baker tilly','crowe','forvis','moss adams','plante moran','citrin','marcum',
+      'withum','eisneramper','cohnreznick','cbiz','mayer hoffman','eide bailly',
+      'accounting firm','audit firm','tax firm','law firm','consulting firm','advisory firm',
+      'big four','mid-tier firm','boutique firm','regional firm','national firm','global firm',
+
+      // Financial statements & reporting
+      'financial statement','balance sheet','income statement','profit and loss','p&l',
+      'cash flow statement','statement of equity','notes to accounts','annual report',
+      'quarterly report','interim report','financial reporting','statutory reporting',
+      'management reporting','segment reporting','consolidated financials','standalone',
+      'revenue recognition','expense recognition','accrual','prepayment','provision',
+      'contingent liability','going concern','material weakness','significant deficiency',
+      'restatement','prior period','comparative financials','trial balance','chart of accounts',
+
+      // Standards & frameworks
+      'ifrs','gaap','us gaap','ind as','ias','frs','uk gaap','asc','fasb','iasb','icai',
+      'pcaob','aicpa','iaasb','isa','isae','isrs','ifac','coso','cobit','soc 1','soc 2',
+      'soc report','agreed upon procedures','compilation','review engagement','assurance',
+      'attestation','agreed-upon','limited assurance','reasonable assurance',
+      'fair presentation','true and fair','materiality','going concern','subsequent event',
+
+      // Audit & assurance
+      'audit','statutory audit','internal audit','external audit','concurrent audit',
+      'tax audit','cost audit','secretarial audit','stock audit','forensic audit',
+      'operational audit','performance audit','compliance audit','information systems audit',
+      'it audit','systems audit','risk based audit','audit plan','audit program',
+      'audit evidence','audit sampling','substantive testing','test of controls',
+      'walkthrough','observation','inspection','confirmation','recalculation','reperformance',
+      'analytical procedure','audit committee','audit opinion','qualified opinion',
+      'adverse opinion','disclaimer','emphasis of matter','key audit matter','kam',
+      'engagement letter','management letter','representation letter','audit trail',
+
+      // Tax - General
+      'income tax','corporate tax','personal tax','individual tax','direct tax','indirect tax',
+      'tax planning','tax compliance','tax advisory','tax structuring','tax optimization',
+      'tax return','tax filing','tax assessment','tax demand','tax refund','tax credit',
+      'tax deduction','tax exemption','tax holiday','tax incentive','tax loss',
+      'carry forward','set off','brought forward loss','unabsorbed depreciation',
+      'minimum alternate tax','mat','amt','book profit','tax provision','deferred tax',
+      'deferred tax asset','deferred tax liability','effective tax rate','tax rate',
+      'advance tax','self assessment tax','tds','tcs','withholding tax','tax deducted',
+      'form 16','form 26as','ais','annual information statement','itr','tax tribunal',
+      'itat','high court','supreme court','tax litigation','tax dispute','appeal',
+
+      // Tax - International
+      'transfer pricing','arm length','comparable uncontrolled','cup method','tnmm',
+      'profit split','cost plus','resale price','advance pricing agreement','apa',
+      'country by country report','cbcr','master file','local file','beps','oecd',
+      'double taxation','dtaa','tax treaty','tax convention','mutual agreement procedure',
+      'map','limitation of benefits','lob','principal purpose test','ppt','mlti',
+      'permanent establishment','pe risk','thin capitalisation','interest limitation',
+      'controlled foreign corporation','cfc','passive income','subpart f','gilti','beat',
+      'fdii','pillar one','pillar two','global minimum tax','qualified domestic minimum',
+      'qdmtt','top up tax','substance','economic substance','anti avoidance','gaar',
+      'specific anti avoidance','saar','place of effective management','poem',
+
+      // GST & Indirect Tax
+      'gst','goods and services tax','vat','value added tax','sales tax','service tax',
+      'excise duty','customs duty','import duty','export duty','sgst','cgst','igst',
+      'utgst','input tax credit','itc','reverse charge','rcm','composition scheme',
+      'gst registration','gst return','gstr','gst audit','gst refund','gst demand',
+      'gst appeal','gst tribunal','e-way bill','e-invoice','hsn','sac','cess',
+      'anti dumping duty','countervailing duty','special additional duty','integrated',
+
+      // M&A & Deals
+      'merger','acquisition','mergers','acquisitions','m&a','m & a','takeover','buyout',
+      'lbo','leveraged buyout','mbo','management buyout','hostile takeover','friendly',
+      'scheme of arrangement','amalgamation','demerger','slump sale','asset purchase',
+      'share purchase','spa','share purchase agreement','definitive agreement','loi',
+      'letter of intent','term sheet','mou','memorandum of understanding','binding','non binding',
+      'due diligence','financial due diligence','tax due diligence','legal due diligence',
+      'commercial due diligence','vendor due diligence','vdd','qof earnings','quality of earnings',
+      'qoe','working capital','normalised','deal structuring','deal advisory','transaction advisory',
+      'synergy','cost synergy','revenue synergy','integration','post merger','pmi',
+      'divestiture','carve out','spin off','split off','joint venture','jv','alliance',
+      'strategic investment','minority stake','majority stake','controlling interest',
+      'earn out','deferred consideration','escrow','representations and warranties','r&w',
+      'indemnification','closing conditions','regulatory approval','cci','competition',
+      'antitrust','Hart-Scott','HSR','material adverse change','mac','MAC clause',
+
+      // Valuation
+      'valuation','business valuation','equity valuation','enterprise value','ev',
+      'ebitda','ebit','ebitda multiple','revenue multiple','pe ratio','price to earnings',
+      'ev/ebitda','ev/revenue','dcf','discounted cash flow','npv','net present value',
+      'irr','internal rate of return','terminal value','wacc','weighted average cost',
+      'cost of equity','cost of debt','beta','risk premium','equity risk premium',
+      'comparable companies','comps','precedent transactions','sum of parts','sotp',
+      'net asset value','nav','intrinsic value','fair market value','fair value','fmv',
+      'purchase price allocation','ppa','goodwill','intangible assets','brand value',
+      'impairment','goodwill impairment','intangible impairment','step up','step down',
+
+      // Capital Markets & Banking
+      'investment banking','ipo','initial public offering','fpo','rights issue','qip',
+      'preferential allotment','private placement','spac','blank check','listing',
+      'stock exchange','nse','bse','nyse','nasdaq','lse','sebi','sec','fca','mas',
+      'prospectus','red herring','offer document','drhp','rhp','underwriting','book building',
+      'green shoe','stabilisation','lock in','anchor investor','qib','hni','retail',
+      'debt capital markets','dcm','bonds','debentures','ncds','commercial paper','cp',
+      'treasury bill','government securities','g-sec','yield','coupon','credit rating',
+      'credit rating agency','crisil','icra','care','india ratings','moody','s&p','fitch',
+      'structured finance','securitisation','asset backed','mortgage backed','abs','mbs',
+      'cdos','clos','syndicated loan','club deal','bilateral','revolving credit','term loan',
+
+      // Private Equity & VC
+      'private equity','pe','venture capital','vc','growth equity','growth capital',
+      'seed funding','series a','series b','series c','pre ipo','late stage','early stage',
+      'fund of funds','limited partner','lp','general partner','gp','carried interest','carry',
+      'management fee','hurdle rate','preferred return','waterfall','distribution','dpi','tvpi',
+      'rvpi','irr','moic','multiple on invested capital','portfolio company','investee',
+      'exit','strategic sale','secondary sale','ipo exit','recap','recapitalisation',
+
+      // Treasury & Risk
+      'treasury','cash management','liquidity','working capital management','cash pooling',
+      'netting','intercompany','forex','foreign exchange','fx','hedging','hedge','derivative',
+      'forward contract','futures','options','swap','interest rate swap','cross currency swap',
+      'currency risk','interest rate risk','commodity risk','counterparty risk','credit risk',
+      'market risk','operational risk','liquidity risk','var','value at risk','stress testing',
+      'scenario analysis','risk management','enterprise risk','erm','risk framework',
+      'risk appetite','risk register','risk matrix','insurance','captive','reinsurance',
+
+      // Compliance & Regulatory
+      'compliance','regulatory','sebi','rbi','fema','fdi','odi','odi rules','ecb',
+      'external commercial borrowing','compounding','adjudication','show cause notice',
+      'enforcement directorate','ed','sfio','nclt','nclat','insolvency','ibc',
+      'resolution professional','liquidator','committee of creditors','resolution plan',
+      'mca','ministry of corporate affairs','companies act','income tax act','gst act',
+      'fema act','pmla','prevention of money laundering','kyc','aml','anti money laundering',
+      'fatf','cft','counter financing terrorism','beneficial owner','ubo','shell company',
+      'beneficial ownership','reporting entity','suspicious transaction','str',
+      'sox','sarbanes oxley','dodd frank','basel','basel iii','capital adequacy','car',
+      'tier 1','tier 2','npa','non performing asset','provisioning','pcr','provision coverage',
+
+      // Accounting Operations
+      'bookkeeping','ledger','journal','general ledger','gl','sub ledger','accounts payable',
+      'accounts receivable','fixed assets','fa','asset register','depreciation','amortization',
+      'capex','opex','accrual','prepaid','deferred revenue','unearned revenue','accrued expense',
+      'accrued income','provision','bad debt','write off','write down','impairment',
+      'inventory','fifo','lifo','weighted average','stock valuation','cost of goods sold',
+      'cogs','gross margin','gross profit','operating expense','operating income','ebit',
+      'interest expense','tax expense','net income','eps','diluted eps','dividend',
+      'retained earnings','accumulated deficit','share capital','share premium','reserves',
+      'minority interest','non controlling interest','nci','intercompany elimination',
+      'consolidation','elimination','goodwill on consolidation','step acquisition',
+
+      // FP&A & Management Accounting
+      'budgeting','forecasting','fp&a','financial planning','variance analysis','budget vs actual',
+      'rolling forecast','zero based budgeting','zbb','activity based costing','abc costing',
+      'standard costing','marginal costing','absorption costing','contribution margin',
+      'break even','sensitivity analysis','scenario planning','kpi','key performance indicator',
+      'dashboard','management information','mis','business intelligence','bi','data analytics',
+      'power bi','tableau','erp','sap','oracle','netsuite','tally','quickbooks','xero',
+      'sage','workday','hyperion','anaplan','adaptive insights','onestream',
+
+      // Specialised areas
+      'forensic accounting','fraud investigation','fraud examination','cfe','certified fraud',
+      'money laundering','asset tracing','asset recovery','expert witness','litigation support',
+      'dispute resolution','arbitration','mediation','damages quantification',
+      'business interruption','insurance claim','loss of profit','economic loss',
+      'real estate','property','reit','infrastructure','project finance','ppp',
+      'public private partnership','concession','annuity','toll','viability gap funding',
+      'renewable energy','solar','wind','power','infrastructure fund','invit',
+      'fund accounting','hedge fund','mutual fund','aif','alternative investment fund',
+      'category i','category ii','category iii','sebi registered','registered portfolio manager',
+      'portfolio management','wealth management','family office','ultra high net worth',
+      'estate planning','succession planning','trust','offshore','onshore','holding structure',
+
+      // General professional context
+      'client','firm','practice','industry','network','connect','professional','experience',
+      'work','career','knowledge','skill','learn','share','insight','business','services',
+      'colleagues','peers','expertise','opportunities','growth','sector','global','international',
+      'cross border','multinational','expat','residency','secondment','deputation','assignment'
+    ];
+    if (!professionalKeywords.some(k => t.includes(k))) return true;
+
+    return false;
+  }
+
+  function submit() {
+    document.getElementById('quiz').style.display = 'none';
+    document.getElementById('thinking').style.display = 'block';
+
+    setTimeout(() => {
+      const openAns = answers[4] || '';
+      const failed = isVague(openAns);
+
+      document.getElementById('thinking').style.display = 'none';
+      document.getElementById('result').style.display = 'block';
+
+      if (!failed) {
+        document.getElementById('result-icon').innerHTML = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#0F6E56" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        document.getElementById('result-icon').className = 'result-icon pass';
+        document.getElementById('result-title').textContent = 'Welcome to the network!';
+        document.getElementById('result-msg').textContent = 'Your profile looks great. Click below to join the CPA Network WhatsApp group.';
+        const waLink = document.getElementById('wa-link');
+        waLink.href = 'https://chat.whatsapp.com/CDb6XGoKsyGArwAAbAI3s4?mode=gi_t';
+        waLink.style.display = 'inline-flex';
+      } else {
+        document.getElementById('result-icon').innerHTML = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="#993C1D" stroke-width="2.5" stroke-linecap="round"/></svg>';
+        document.getElementById('result-icon').className = 'result-icon fail';
+        document.getElementById('result-title').textContent = 'Not accepted at this time';
+        document.getElementById('result-msg').textContent = 'Your answers were too vague for us to verify your background. This group is for verified accounting and finance professionals.';
+      }
+    }, 2000);
+  }
+
+  updateProgress();
+  checkNext();
+</script>
+</body>
+</html>
